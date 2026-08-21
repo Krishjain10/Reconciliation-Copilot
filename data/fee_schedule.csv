@@ -1,0 +1,4 @@
+fee_category,fee_type,fee_value
+payment,percentage,2.0
+refund,flat,5.00
+payout,percentage,1.5
