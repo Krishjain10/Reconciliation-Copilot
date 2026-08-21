@@ -81,8 +81,7 @@ Payment processors settle thousands of transactions daily. Each settlement batch
 ### Install Dependencies
 
 ```bash
-pip install pandas streamlit langgraph
-pip install pytest  # for running tests
+pip install -r requirements.txt
 ```
 
 ### Clone & Navigate

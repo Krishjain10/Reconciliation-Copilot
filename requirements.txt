@@ -1,0 +1,4 @@
+pandas==2.3.3
+streamlit==1.30.0
+langgraph==1.2.11
+pytest==7.4.2
