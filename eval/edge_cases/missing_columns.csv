@@ -1,0 +1,4 @@
+order_id,amount,fee_category
+ORD001,1000.00,payment
+ORD002,2000.00,payment
+ORD003,500.00,refund

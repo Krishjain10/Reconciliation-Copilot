@@ -1,0 +1,4 @@
+order_id,settlement_batch_id,amount,fee_category
+ORD001,BATCH_001,N/A,payment
+ORD002,BATCH_001,ERROR,payment
+ORD003,BATCH_001,1000.00,payment
