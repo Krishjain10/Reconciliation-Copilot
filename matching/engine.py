@@ -49,11 +49,18 @@ def load_fee_schedule(path: str | pathlib.Path) -> pd.DataFrame:
     """Load a fee schedule CSV.
 
     Expected columns:
-        fee_category  – label that matches ledger rows (e.g. "payment", "refund")
-        fee_type      – "percentage" or "flat"
-        fee_value     – numeric value (percentage as 0-100 scale, flat in currency)
+        fee_category   – label that matches ledger rows (e.g. "payment", "refund")
+        fee_type       – "percentage" or "flat"
+        fee_value      – numeric value (percentage as 0-100 scale, flat in currency)
 
-    Returns a DataFrame indexed by *fee_category*.
+    Optional column:
+        effective_from – date string (YYYY-MM-DD) from which this rate applies.
+                         When present, the engine picks the fee row whose
+                         effective_from is <= the transaction date.
+
+    Returns a DataFrame indexed by *fee_category*.  If ``effective_from`` is
+    present it is parsed but the index is still *fee_category* (may contain
+    duplicate categories for different date ranges).
     """
     df = pd.read_csv(path)
     required = {"fee_category", "fee_type", "fee_value"}
@@ -61,6 +68,14 @@ def load_fee_schedule(path: str | pathlib.Path) -> pd.DataFrame:
     if missing:
         raise ValueError(f"Fee schedule is missing columns: {missing}")
     df["fee_value"] = pd.to_numeric(df["fee_value"], errors="coerce")
+
+    # Parse optional effective_from for date-aware fee lookup
+    if "effective_from" in df.columns:
+        df["effective_from"] = pd.to_datetime(
+            df["effective_from"], errors="coerce",
+        )
+        df = df.sort_values(["fee_category", "effective_from"])
+
     return df.set_index("fee_category")
 
 
@@ -76,6 +91,41 @@ def compute_fee(amount: float, fee_type: str, fee_value: float) -> float:
         return round(fee_value, 2)
     else:
         raise ValueError(f"Unknown fee_type: {fee_type!r}")
+
+
+def _lookup_fee(
+    fee_schedule: pd.DataFrame,
+    category: str,
+    txn_date: object = None,
+) -> tuple:
+    """Look up (fee_type, fee_value) for a category, optionally by date.
+
+    If the fee schedule has an ``effective_from`` column and *txn_date* is
+    provided, the row with the latest ``effective_from <= txn_date`` is used.
+    Otherwise the first (or only) row for that category is returned.
+
+    Returns (fee_type, fee_value) or (None, None) if not found.
+    """
+    if category not in fee_schedule.index:
+        return None, None
+
+    rows = fee_schedule.loc[[category]]
+
+    has_date_col = "effective_from" in rows.columns
+    if has_date_col and txn_date is not None:
+        txn_dt = pd.Timestamp(txn_date)
+        applicable = rows[rows["effective_from"] <= txn_dt]
+        if not applicable.empty:
+            best = applicable.iloc[-1]  # latest effective_from <= txn_date
+            return best["fee_type"], float(best["fee_value"])
+        # No applicable date — fall through to static lookup
+
+    # Static (non-date) lookup
+    if isinstance(rows, pd.DataFrame):
+        row = rows.iloc[0]
+    else:
+        row = rows
+    return row["fee_type"], float(row["fee_value"])
 
 
 def match_batches(
@@ -131,14 +181,16 @@ def match_batches(
         total_fees = 0.0
         fee_breakdown: dict[str, float] = {}
 
+        has_date = "date" in group.columns
+
         for _, row in group.iterrows():
             cat = row["fee_category"]
             amount = float(row["amount"])
+            txn_date = row.get("date") if has_date else None
 
-            if cat in fee_schedule.index:
-                fee_type = fee_schedule.loc[cat, "fee_type"]
-                fee_value = fee_schedule.loc[cat, "fee_value"]
-                fee = compute_fee(amount, fee_type, fee_value)
+            ft, fv = _lookup_fee(fee_schedule, cat, txn_date)
+            if ft is not None:
+                fee = compute_fee(amount, ft, fv)
             else:
                 fee = 0.0
 
@@ -193,3 +245,45 @@ def resolved(results: List[BatchResult]) -> List[BatchResult]:
 def unresolved(results: List[BatchResult]) -> List[BatchResult]:
     """Return only the unresolved (mismatched) batches."""
     return [r for r in results if r.status == MatchStatus.MISMATCHED]
+
+
+# ---------------------------------------------------------------------------
+# Orphan settlement detection
+# ---------------------------------------------------------------------------
+
+@dataclass
+class OrphanSettlement:
+    """A settlement entry with no corresponding ledger batch."""
+    settlement_batch_id: str
+    payout_total: float
+    extra_fields: dict = field(default_factory=dict)
+
+
+def find_orphan_settlements(
+    ledger: pd.DataFrame,
+    settlements: pd.DataFrame,
+) -> List[OrphanSettlement]:
+    """Return settlement batches that have no matching ledger entries.
+
+    These are settlements the bank paid out but the merchant has no
+    record of in their ledger — they were previously silently skipped.
+    """
+    ledger_batch_ids = set(ledger["settlement_batch_id"].astype(str).unique())
+    orphans: list[OrphanSettlement] = []
+
+    for _, row in settlements.iterrows():
+        bid = str(row["settlement_batch_id"])
+        if bid not in ledger_batch_ids:
+            extra = {
+                k: row[k] for k in row.index
+                if k not in ("settlement_batch_id", "payout_total")
+                and pd.notna(row[k])
+            }
+            orphans.append(OrphanSettlement(
+                settlement_batch_id=bid,
+                payout_total=float(row["payout_total"]),
+                extra_fields=extra,
+            ))
+
+    return orphans
+

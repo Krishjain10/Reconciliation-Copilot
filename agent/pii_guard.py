@@ -23,6 +23,12 @@ _ACCOUNT_NUMBER_RE = re.compile(r"\b\d{9,18}\b(?!\.\d)")
 # IFSC code: 4 uppercase letters + literal zero + 6 alphanumeric chars
 _IFSC_RE = re.compile(r"\b[A-Z]{4}0[A-Z0-9]{6}\b")
 
+# Email address pattern
+_EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
+
+# Indian PAN: 5 uppercase letters + 4 digits + 1 uppercase letter
+_PAN_RE = re.compile(r"\b[A-Z]{5}\d{4}[A-Z]\b")
+
 
 def pii_guard(payload: str) -> None:
     """Raise :class:`PIILeakError` if *payload* contains recognisable PII.
@@ -42,5 +48,19 @@ def pii_guard(payload: str) -> None:
     if match:
         raise PIILeakError(
             f"Blocked: IFSC-code pattern detected in outgoing payload "
+            f"(matched {match.group()!r})"
+        )
+
+    match = _EMAIL_RE.search(payload)
+    if match:
+        raise PIILeakError(
+            f"Blocked: email-address pattern detected in outgoing payload "
+            f"(matched {match.group()!r})"
+        )
+
+    match = _PAN_RE.search(payload)
+    if match:
+        raise PIILeakError(
+            f"Blocked: PAN-number pattern detected in outgoing payload "
             f"(matched {match.group()!r})"
         )

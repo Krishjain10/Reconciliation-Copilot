@@ -22,6 +22,8 @@ SENSITIVE_FIELDS: List[str] = [
     "counterparty_name",
     "payer_name",
     "payee_name",
+    "email",
+    "pan",
 ]
 
 _DEFAULT_SECRET = b"recon-copilot-hmac-key-v1"

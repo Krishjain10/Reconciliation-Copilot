@@ -164,19 +164,29 @@ All numbers below are from `python eval/golden_set.py` run against the 8-batch g
 
 ---
 
+## What We Fixed (v2)
+
+These limitations from the original version have been resolved:
+
+| Original Limitation | Fix |
+|---------------------|-----|
+| **PII guard scope** — only account numbers & IFSC | Now detects **email addresses** and **Indian PAN numbers** too |
+| **Orphan settlements** — silently skipped | Detected and displayed in a dedicated **ORPHANS** tab |
+| **De-tokenization API** — reserved, not wired | Password-protected **de-tokenization toggle** in the Audit Log |
+| **Single file pair** — one ledger + one settlement | **Multi-file upload** — concatenates multiple CSVs before processing |
+| **Static fee schedule** — no time-varying rates | Supports optional **`effective_from`** date column for mid-period rate changes |
+
+---
+
 ## Known Limitations
 
-1. **Advisory-only AI** — explanations describe likely causes; no automatic ledger corrections
+1. **Advisory-only AI** — explanations describe likely causes; no automatic ledger corrections (by design for financial safety)
 2. **Rule-based demo LLM** — ships with a deterministic fallback; swap in a real LLM via `llm_callable`
-3. **Single currency (INR)** — cross-currency settlements need a conversion layer
-4. **Static fee schedule** — time-varying rates (mid-month changes) not yet supported
-5. **PII guard scope** — covers account numbers (9–18 digits) and IFSC codes; other PII types (email, PAN) can be added
-6. **Orphan settlements** — settlement entries with no matching ledger batch are silently skipped
-7. **Single file pair** — each run processes one ledger + one settlement CSV
-8. **De-tokenization API** — `detokenize()` and `deanonymize_record()` in `agent/anonymize.py` are reserved for a future authorized-user audit review flow (displaying original values to compliance officers); not yet wired into the dashboard
+3. **Single currency (INR)** — cross-currency settlements need a conversion layer and live exchange rates
 
 ---
 
 ## License
 
 Built for the Razorpay Hackathon.
+

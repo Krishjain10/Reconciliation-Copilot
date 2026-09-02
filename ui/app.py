@@ -38,6 +38,8 @@ from agent.pii_guard import pii_guard
 from matching.engine import (
     BatchResult,
     MatchStatus,
+    OrphanSettlement,
+    find_orphan_settlements,
     load_fee_schedule,
     match_batches,
     resolved,
@@ -145,7 +147,7 @@ def run_pipeline(
 
     Returns a dict with keys:
         all_results, resolved, tolerance_matched, unresolved,
-        explanations, audit_log
+        explanations, audit_log, orphan_settlements, anonymizer
     """
     llm = llm_callable or _create_fallback_llm()
     anonymizer = Anonymizer()
@@ -159,6 +161,9 @@ def run_pipeline(
     tolerance_list = [
         r for r in results if r.status == MatchStatus.TOLERANCE_MATCHED
     ]
+
+    # 1b. Detect orphan settlements ────────────────────────────────────
+    orphans = find_orphan_settlements(ledger_df, settlement_df)
 
     # 2. Build settlement info lookup (for PII fields) ─────────────────
     settlement_info: dict[str, dict] = {}
@@ -225,6 +230,8 @@ def run_pipeline(
         "unresolved": unresolved_list,
         "explanations": explanations,
         "audit_log": audit_log,
+        "orphan_settlements": orphans,
+        "anonymizer": anonymizer,
     }
 
 
@@ -988,23 +995,25 @@ def _render_sidebar() -> dict | None:
             st.markdown('<div class="sb-lbl">Fee Schedule</div>', unsafe_allow_html=True)
             st.markdown('<div class="sb-file">fee_schedule.csv</div>', unsafe_allow_html=True)
         else:
-            st.markdown('<div class="sb-lbl">Ledger File</div>', unsafe_allow_html=True)
-            ledger_file = st.file_uploader(
-                "Upload Ledger CSV", type=["csv"], key="ledger",
+            st.markdown('<div class="sb-lbl">Ledger Files</div>', unsafe_allow_html=True)
+            ledger_files = st.file_uploader(
+                "Upload Ledger CSV(s)", type=["csv"], key="ledger",
+                accept_multiple_files=True,
                 label_visibility="collapsed")
-            st.markdown('<div class="sb-lbl">Settlements File</div>', unsafe_allow_html=True)
-            settlement_file = st.file_uploader(
-                "Upload Settlement CSV", type=["csv"], key="settlement",
+            st.markdown('<div class="sb-lbl">Settlement Files</div>', unsafe_allow_html=True)
+            settlement_files = st.file_uploader(
+                "Upload Settlement CSV(s)", type=["csv"], key="settlement",
+                accept_multiple_files=True,
                 label_visibility="collapsed")
             st.markdown('<div class="sb-lbl">Fee Schedule</div>', unsafe_allow_html=True)
             fee_file = st.file_uploader(
                 "Upload Fee Schedule CSV (optional)",
                 type=["csv"], key="fee_schedule",
                 label_visibility="collapsed")
-            if ledger_file:
-                ledger_source = ledger_file
-            if settlement_file:
-                settlement_source = settlement_file
+            if ledger_files:
+                ledger_source = ledger_files  # list of UploadedFile
+            if settlement_files:
+                settlement_source = settlement_files
             if fee_file:
                 fee_source = fee_file
             else:
@@ -1038,6 +1047,98 @@ def _render_sidebar() -> dict | None:
 # MAIN
 # ═══════════════════════════════════════════════════════════════════════════
 
+def _render_orphan_section(res: dict):
+    """Render the orphan settlements tab."""
+    orphans = res.get("orphan_settlements", [])
+
+    if not orphans:
+        st.markdown(
+            '<div class="empty">'
+            '<div class="empty-title">No orphan settlements</div>'
+            '<div class="empty-desc">Every settlement batch has a matching '
+            'ledger entry.</div></div>',
+            unsafe_allow_html=True)
+        return
+
+    st.markdown(
+        '<div class="sec-lbl">⚠ ORPHAN SETTLEMENTS</div>'
+        '<div class="sec-desc">These settlement entries have no matching '
+        'ledger batch — the bank paid out but no corresponding merchant '
+        'record was found.</div>',
+        unsafe_allow_html=True)
+
+    rows = ""
+    for o in orphans:
+        extra_cols = ""
+        for k, v in o.extra_fields.items():
+            extra_cols += f'<td class="ml">{v}</td>'
+        rows += (
+            f'<tr>'
+            f'<td class="ml">{o.settlement_batch_id}</td>'
+            f'<td class="m">₹{o.payout_total:,.2f}</td>'
+            f'<td><span class="st-pill st-pill-red">ORPHAN</span></td>'
+            f'{extra_cols}'
+            f'</tr>'
+        )
+
+    # Build extra headers from first orphan's extra_fields
+    extra_headers = ""
+    if orphans:
+        for k in orphans[0].extra_fields:
+            extra_headers += f'<th>{k}</th>'
+
+    st.markdown(f'''
+    <div style="background:#FFF;border:1px solid #E3E0D8;border-radius:4px;overflow:hidden;">
+        <table class="ltbl">
+            <thead><tr>
+                <th>Batch</th><th class="r">Payout</th>
+                <th>Status</th>{extra_headers}
+            </tr></thead>
+            <tbody>{rows}</tbody>
+        </table>
+    </div>
+    ''', unsafe_allow_html=True)
+
+
+def _render_detoken_section(res: dict):
+    """Render de-tokenization controls in the audit log."""
+    anonymizer = res.get("anonymizer")
+    if not anonymizer or not anonymizer._lookup:
+        return
+
+    st.markdown("---")
+    st.markdown(
+        '<div class="sec-lbl">🔓 DE-TOKENIZATION (Authorized Users Only)</div>',
+        unsafe_allow_html=True)
+
+    passphrase = st.text_input(
+        "Enter audit passphrase to reveal original values",
+        type="password",
+        key="detoken_pass",
+    )
+
+    # Simple passphrase check — in production this would be a proper auth flow
+    if passphrase == "recon-audit-2024":
+        st.success("✓ Authorized — showing de-tokenized values")
+        token_map = anonymizer._lookup
+        rows = ""
+        for token, original in token_map.items():
+            rows += f'<tr><td class="ml">{token}</td><td class="ml">{original}</td></tr>'
+        st.markdown(f'''
+        <div style="background:#FFF;border:1px solid #E3E0D8;border-radius:4px;
+                    overflow:hidden;max-width:600px;">
+            <table class="ltbl">
+                <thead><tr>
+                    <th>Token</th><th>Original Value</th>
+                </tr></thead>
+                <tbody>{rows}</tbody>
+            </table>
+        </div>
+        ''', unsafe_allow_html=True)
+    elif passphrase:
+        st.error("Incorrect passphrase.")
+
+
 def main():
     st.set_page_config(
         page_title="Reconciliation Copilot",
@@ -1056,8 +1157,21 @@ def main():
     if config is not None:
         with st.spinner("Running reconciliation…"):
             try:
-                ledger_df = load_ledger(config["ledger_source"])
-                settlement_df = load_settlements(config["settlement_source"])
+                src = config["ledger_source"]
+                # Multi-file support: concatenate if list
+                if isinstance(src, list):
+                    ledger_df = pd.concat(
+                        [load_ledger(f) for f in src], ignore_index=True)
+                else:
+                    ledger_df = load_ledger(src)
+
+                src = config["settlement_source"]
+                if isinstance(src, list):
+                    settlement_df = pd.concat(
+                        [load_settlements(f) for f in src], ignore_index=True)
+                else:
+                    settlement_df = load_settlements(src)
+
                 fee_schedule_df = load_fee_schedule(config["fee_source"])
                 result = run_pipeline(
                     ledger_df, settlement_df, fee_schedule_df,
@@ -1093,16 +1207,25 @@ def main():
 
     _render_stat_cards(result)
 
-    tab1, tab2, tab3 = st.tabs(["RESOLVED", "UNRESOLVED", "AUDIT LOG"])
+    # Determine tab count based on orphans
+    orphans = result.get("orphan_settlements", [])
+    if orphans:
+        tab1, tab2, tab3, tab4 = st.tabs(
+            ["RESOLVED", "UNRESOLVED", f"ORPHANS ({len(orphans)})", "AUDIT LOG"])
+    else:
+        tab1, tab2, tab3, tab4 = st.tabs(
+            ["RESOLVED", "UNRESOLVED", "ORPHANS", "AUDIT LOG"])
 
     with tab1:
         _render_resolved_section(result)
     with tab2:
         _render_unresolved_section(result)
     with tab3:
+        _render_orphan_section(result)
+    with tab4:
         _render_audit_section(result)
+        _render_detoken_section(result)
 
 
 if __name__ == "__main__":
     main()
-
