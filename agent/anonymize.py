@@ -49,6 +49,8 @@ class Anonymizer:
         self._lookup[token] = value
         return token
 
+    # Reserved for future use: displaying original values to authorized
+    # users in an audit review flow.
     def detokenize(self, token: str) -> str:
         """Restore the original value from a token (local-only)."""
         return self._lookup.get(token, token)
@@ -70,6 +72,8 @@ class Anonymizer:
                 out[key] = self.tokenize(str(out[key]))
         return out
 
+    # Reserved for future use: displaying original values to authorized
+    # users in an audit review flow.
     def deanonymize_record(
         self,
         record: dict,

@@ -228,339 +228,746 @@ def run_pipeline(
     }
 
 
+
+
 # ═══════════════════════════════════════════════════════════════════════════
-# STREAMLIT UI
+# STREAMLIT UI — Matches reference mockup
 # ═══════════════════════════════════════════════════════════════════════════
 
 def _inject_css():
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
 
-    /* ── Base ────────────────────────────────────────────────────── */
-    html, body, [class*="st-"] { font-family: 'Inter', sans-serif; }
-    .stApp {
-        background: linear-gradient(145deg, #0a0a1a 0%, #1a1a2e 50%, #16213e 100%);
+    /* ── Base ─────────────────────────────────────────────── */
+    html, body, [class*="st-"] {
+        font-family: 'Inter', sans-serif;
+    }
+    .stApp { background: #F5F4F0; }
+    .block-container {
+        max-width: 1060px;
+        padding: 1.5rem 2rem 4rem;
+    }
+    p, span, label, div, li, td, th {
+        color: #14181F !important;
     }
 
-    /* ── Sidebar ─────────────────────────────────────────────────── */
+    /* ── Sidebar ──────────────────────────────────────────── */
     section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0e0e20 0%, #141428 100%);
-        border-right: 1px solid rgba(99,102,241,0.15);
+        background: #EDECEA;
+        border-right: 1px solid #DDD9D1;
     }
-    section[data-testid="stSidebar"] .stMarkdown h1,
-    section[data-testid="stSidebar"] .stMarkdown h2,
-    section[data-testid="stSidebar"] .stMarkdown h3 {
-        color: #a5b4fc;
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3 {
+        font-family: 'Source Serif 4', 'Georgia', serif !important;
+        color: #14181F !important;
     }
-
-    /* ── Header ──────────────────────────────────────────────────── */
-    .hero-title {
-        font-size: 2.6rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #a5b4fc, #818cf8, #c084fc);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        letter-spacing: -0.03em;
-        margin-bottom: 0;
-        line-height: 1.15;
-    }
-    .hero-sub {
-        font-size: 1.05rem;
-        color: #94a3b8;
-        margin-top: 4px;
-        font-weight: 400;
-    }
-
-    /* ── Metric cards ────────────────────────────────────────────── */
-    div[data-testid="stMetric"] {
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 14px;
-        padding: 18px 20px;
-        transition: transform 0.2s, border-color 0.2s;
-    }
-    div[data-testid="stMetric"]:hover {
-        transform: translateY(-2px);
-        border-color: rgba(99,102,241,0.35);
-    }
-    div[data-testid="stMetric"] label {
-        color: #94a3b8 !important;
-        font-weight: 500;
-        font-size: 0.8rem;
+    /* Sidebar section labels */
+    .sb-lbl {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.1em;
+        color: #6B6558 !important;
+        margin: 16px 0 5px;
     }
-    div[data-testid="stMetric"] [data-testid="stMetricValue"] {
-        font-weight: 700;
-        font-size: 1.8rem;
+    .sb-file {
+        background: #FFFFFF;
+        border: 1px solid #DDD9D1;
+        border-radius: 4px;
+        padding: 7px 10px;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.78rem;
+        color: #14181F !important;
+        margin-bottom: 2px;
     }
 
-    /* ── Tabs ────────────────────────────────────────────────────── */
+    /* ── Letterhead ───────────────────────────────────────── */
+    .lh {
+        padding: 20px 0 16px;
+        margin-bottom: 20px;
+    }
+    .lh-title {
+        font-family: 'Source Serif 4', 'Georgia', serif;
+        font-size: 1.65rem;
+        font-weight: 700;
+        color: #14181F !important;
+        letter-spacing: -0.01em;
+        margin: 0;
+        line-height: 1.2;
+    }
+    .lh-sub {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.82rem;
+        color: #6B6558 !important;
+        margin-top: 3px;
+    }
+
+    /* ── Stats row — plain text, no borders ───────────────── */
+    .stats {
+        display: flex;
+        gap: 0;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #E3E0D8;
+    }
+    .stats-cell {
+        flex: 1;
+    }
+    .stats-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.6rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #6B6558 !important;
+        margin-bottom: 2px;
+    }
+    .stats-num {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #14181F !important;
+        line-height: 1.2;
+    }
+
+    /* ── Tabs ─────────────────────────────────────────────── */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 6px;
-        background: rgba(255,255,255,0.03);
-        border-radius: 12px;
-        padding: 4px;
+        gap: 0;
+        background: transparent;
+        border-bottom: 1px solid #E3E0D8;
+        padding: 0;
+        border-radius: 0;
     }
     .stTabs [data-baseweb="tab"] {
-        border-radius: 10px;
-        padding: 10px 20px;
+        border-radius: 0;
+        padding: 8px 18px 10px;
+        font-family: 'Inter', sans-serif;
         font-weight: 600;
-        font-size: 0.88rem;
-        color: #94a3b8;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #6B6558 !important;
+        border-bottom: 3px solid transparent;
     }
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(139,92,246,0.18)) !important;
-        color: #e0e7ff !important;
+        background: transparent !important;
+        color: #0E5C4A !important;
+        border-bottom: 3px solid #0E5C4A !important;
+        box-shadow: none;
     }
 
-    /* ── Buttons ─────────────────────────────────────────────────── */
-    .stButton > button {
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        color: #fff;
-        border: none;
-        border-radius: 10px;
-        padding: 0.6rem 1.6rem;
+    /* ── Mismatch card ────────────────────────────────────── */
+    .mx {
+        background: #FFFFFF;
+        border: 1px solid #E3E0D8;
+        border-radius: 4px;
+        padding: 24px 28px;
+        margin-bottom: 16px;
+    }
+
+    /* Card top: batch ID + tags */
+    .mx-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .mx-bid {
+        font-family: 'IBM Plex Mono', monospace;
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: #14181F !important;
+    }
+    .mx-tags { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+
+    /* Tags — minimal, rectangular */
+    .tag {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.62rem;
         font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 2px 8px;
+        border-radius: 2px;
+        white-space: nowrap;
+    }
+    .tag-delta  { color: #0E5C4A !important; background: #E8F3EE; }
+    .tag-review { color: #6B6558 !important; background: #F0EFEC; border: 1px solid #E3E0D8; }
+    .tag-conf   { color: #6B6558 !important; background: transparent; }
+
+    /* Metrics row — plain text, 4 columns */
+    .mx-metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1.2fr;
+        gap: 0;
+        margin-bottom: 20px;
+    }
+    .mx-m-lbl {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.58rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #6B6558 !important;
+        margin-bottom: 2px;
+    }
+    .mx-m-val {
+        font-family: 'IBM Plex Mono', monospace;
         font-size: 0.92rem;
-        transition: transform 0.15s, box-shadow 0.15s;
-        width: 100%;
-    }
-    .stButton > button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 24px rgba(99,102,241,0.35);
+        font-weight: 500;
+        color: #14181F !important;
     }
 
-    /* ── Expanders ───────────────────────────────────────────────── */
-    details[data-testid="stExpander"] {
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.07);
-        border-radius: 12px;
-        margin-bottom: 10px;
+    /* Inline confidence with bar */
+    .conf-inline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
-
-    /* ── Dataframe ───────────────────────────────────────────────── */
-    .stDataFrame { border-radius: 12px; overflow: hidden; }
-
-    /* ── Status badges ───────────────────────────────────────────── */
-    .badge {
-        display: inline-block;
-        padding: 4px 14px;
-        border-radius: 20px;
-        font-size: 0.78rem;
-        font-weight: 600;
-        letter-spacing: 0.03em;
+    .conf-pct {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.92rem;
+        font-weight: 500;
+        color: #14181F !important;
+        white-space: nowrap;
     }
-    .badge-matched   { background: rgba(16,185,129,0.18); color: #34d399; }
-    .badge-tolerance { background: rgba(245,158,11,0.18); color: #fbbf24; }
-    .badge-mismatch  { background: rgba(239,68,68,0.18);  color: #f87171; }
-
-    /* ── Dividers ────────────────────────────────────────────────── */
-    hr {
-        border: none;
-        border-top: 1px solid rgba(255,255,255,0.06);
-        margin: 1.2rem 0;
-    }
-
-    /* ── Confidence bar ──────────────────────────────────────────── */
-    .conf-bar-bg {
-        background: rgba(255,255,255,0.08);
-        border-radius: 6px;
-        height: 8px;
-        width: 100%;
+    .conf-track {
+        flex: 1;
+        background: #E3E0D8;
+        border-radius: 2px;
+        height: 5px;
         overflow: hidden;
+        min-width: 60px;
     }
-    .conf-bar-fill {
+    .conf-fill {
         height: 100%;
-        border-radius: 6px;
-        transition: width 0.4s ease;
+        border-radius: 2px;
+    }
+
+    /* Explanation block */
+    .mx-expl {
+        background: #F7FAF8;
+        border-left: 4px solid #0E5C4A;
+        border-radius: 0 4px 4px 0;
+        padding: 14px 18px;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.82rem;
+        line-height: 1.6;
+        color: #2A2A2A !important;
+    }
+
+    /* Fee sub-table */
+    .mx-fees {
+        margin-top: 14px;
+        padding-top: 10px;
+        border-top: 1px solid #E3E0D8;
+    }
+    .mx-fees-lbl {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.58rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #6B6558 !important;
+        margin-bottom: 4px;
+    }
+
+    /* ── Resolved / Ledger table ──────────────────────────── */
+    .ltbl {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+    }
+    .ltbl thead th {
+        text-align: left;
+        padding: 8px 12px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        font-size: 0.62rem;
+        color: #6B6558 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        border-bottom: 2px solid #C8C4BA;
+    }
+    .ltbl thead th.r { text-align: right; }
+    .ltbl tbody td {
+        padding: 9px 12px;
+        color: #14181F !important;
+        border-bottom: 1px solid #E3E0D8;
+        font-family: 'Inter', sans-serif;
+    }
+    .ltbl tbody tr:last-child td { border-bottom: none; }
+    .ltbl tbody td.m {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.8rem;
+        text-align: right;
+        font-weight: 500;
+    }
+    .ltbl tbody td.ml {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    /* ── Status pills (for resolved table) ────────────────── */
+    .st-pill {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 2px;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.6rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .st-pill-green { background: #E4F2E8; color: #1B7A43 !important; }
+    .st-pill-amber { background: #FDF2E0; color: #B5650D !important; }
+    .st-pill-red   { background: #FBEAE9; color: #B3261E !important; }
+
+    /* ── Section labels ───────────────────────────────────── */
+    .sec-lbl {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.6rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #6B6558 !important;
+        margin-bottom: 6px;
+    }
+    .sec-title {
+        font-family: 'Source Serif 4', serif;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #14181F !important;
+        margin-bottom: 2px;
+    }
+    .sec-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.76rem;
+        color: #6B6558 !important;
+        margin-bottom: 14px;
+    }
+
+    /* ── Empty state ──────────────────────────────────────── */
+    .empty {
+        text-align: center;
+        padding: 50px 24px;
+        background: #FFFFFF;
+        border: 1px solid #E3E0D8;
+        border-radius: 4px;
+    }
+    .empty-title {
+        font-family: 'Source Serif 4', serif;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #14181F !important;
+        margin-bottom: 6px;
+    }
+    .empty-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.82rem;
+        color: #6B6558 !important;
+        max-width: 420px;
+        margin: 0 auto;
+        line-height: 1.5;
+    }
+
+    /* ── How-it-works strip ───────────────────────────────── */
+    .hiw {
+        display: flex;
+        gap: 1px;
+        background: #E3E0D8;
+        border: 1px solid #E3E0D8;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 14px;
+    }
+    .hiw-s {
+        flex: 1;
+        background: #FFFFFF;
+        padding: 12px 14px;
+        text-align: center;
+    }
+    .hiw-n {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.6rem;
+        font-weight: 600;
+        color: #6B6558 !important;
+        margin-bottom: 1px;
+    }
+    .hiw-l {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #14181F !important;
+    }
+
+    /* ── Buttons ──────────────────────────────────────────── */
+    .stButton > button {
+        background: #0E5C4A;
+        color: #FFFFFF !important;
+        border: none;
+        border-radius: 4px;
+        padding: 0.6rem 1.4rem;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: background 0.15s;
+        width: 100%;
+    }
+    .stButton > button:hover { background: #0A4A3B; }
+
+    /* ── Expanders ────────────────────────────────────────── */
+    details[data-testid="stExpander"] {
+        background: #FAFAF8;
+        border: 1px solid #E3E0D8;
+        border-radius: 4px;
+        margin-bottom: 8px;
+    }
+
+    /* ── Inputs ───────────────────────────────────────────── */
+    .stTextInput > div > div > input {
+        background: #FFFFFF;
+        border: 1px solid #DDD9D1;
+        border-radius: 4px;
+        padding: 7px 12px;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.82rem;
+        color: #14181F;
+    }
+    .stTextInput > div > div > input:focus {
+        border-color: #0E5C4A;
+        box-shadow: 0 0 0 2px rgba(14,92,74,0.1);
+    }
+    [data-testid="stFileUploader"] {
+        background: #FFFFFF;
+        border-radius: 4px;
+        border: 1px dashed #C8C4BA;
+        padding: 8px;
+    }
+    .stCheckbox label span { color: #14181F !important; }
+    .stSlider [data-baseweb="slider"] [role="slider"] { background: #0E5C4A; }
+
+    /* ── Misc ─────────────────────────────────────────────── */
+    hr { border: none; border-top: 1px solid #E3E0D8; margin: 0.8rem 0; }
+    .stDataFrame { border-radius: 4px; overflow: hidden; }
+
+    /* ── Hide Streamlit chrome (Deploy, Options, header bar, footer) ── */
+    #MainMenu { visibility: hidden; }
+    header[data-testid="stHeader"] { display: none !important; }
+    footer { visibility: hidden; }
+    .stDeployButton { display: none !important; }
+    .stAppDeployButton { display: none !important; }
+
+    /* ── Remove the colored top bar ──────────────────────── */
+    .stApp > header { display: none !important; }
+    div[data-testid="stDecoration"] { display: none !important; }
+    div[data-testid="stStatusWidget"] { display: none !important; }
+
+    /* ── Sidebar alignment — flush top-left ──────────────── */
+    section[data-testid="stSidebar"] > div:first-child {
+        padding-top: 1.5rem;
+        padding-left: 1.2rem;
+        padding-right: 1.2rem;
+    }
+    section[data-testid="stSidebar"] .block-container {
+        padding: 0;
+    }
+    section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+        padding-top: 1.5rem;
+        padding-left: 1.2rem;
+        padding-right: 1.2rem;
+    }
+    /* Remove default top gap in main content area */
+    .stApp .main .block-container {
+        padding-top: 1.5rem;
     }
     </style>
     """, unsafe_allow_html=True)
 
 
+# ───────────────────────────────────────────────────────────────────────────
+
 def _render_header():
     st.markdown(
-        '<p class="hero-title">🏦 Reconciliation Copilot</p>'
-        '<p class="hero-sub">'
-        'AI-powered settlement reconciliation — detect, explain, and resolve '
-        'mismatches in seconds'
-        '</p>',
+        '<div class="lh">'
+        '<p class="lh-title">Reconciliation Copilot</p>'
+        '<p class="lh-sub">'
+        'Settlement reconciliation — match batches, explain mismatches, '
+        'verify PII safety'
+        '</p>'
+        '</div>',
         unsafe_allow_html=True,
     )
-    st.markdown("---")
 
 
-def _confidence_color(conf: float) -> str:
-    if conf >= 0.80:
-        return "#10b981"
-    if conf >= 0.60:
-        return "#f59e0b"
-    return "#ef4444"
+def _conf_color(c: float) -> str:
+    if c >= 0.80: return "#1B7A43"
+    if c >= 0.60: return "#B5650D"
+    return "#B3261E"
 
 
-def _render_metrics(pipeline_result: dict):
-    total = len(pipeline_result["all_results"])
-    matched = len([
-        r for r in pipeline_result["all_results"]
-        if r.status == MatchStatus.MATCHED
-    ])
-    tol = len(pipeline_result["tolerance_matched"])
-    mis = len(pipeline_result["unresolved"])
+def _render_stat_cards(res: dict):
+    total = len(res["all_results"])
+    ok = len([r for r in res["all_results"]
+              if r.status in (MatchStatus.MATCHED, MatchStatus.TOLERANCE_MATCHED)])
+    bad = len(res["unresolved"])
+    pct = f"{100*ok//total}%" if total else "—"
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Total Batches", total)
-    c2.metric("✅ Matched", matched)
-    c3.metric("🟡 Tolerance", tol)
-    c4.metric("🔴 Mismatched", mis)
+    st.markdown(f'''
+    <div class="stats">
+        <div class="stats-cell">
+            <div class="stats-label">Total Batches</div>
+            <div class="stats-num">{total}</div>
+        </div>
+        <div class="stats-cell">
+            <div class="stats-label">Resolved</div>
+            <div class="stats-num">{ok}</div>
+        </div>
+        <div class="stats-cell">
+            <div class="stats-label">Unresolved</div>
+            <div class="stats-num">{bad}</div>
+        </div>
+        <div class="stats-cell">
+            <div class="stats-label">Match Rate</div>
+            <div class="stats-num">{pct}</div>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
 
 
-def _render_resolved_tab(pipeline_result: dict):
-    matched = [
-        r for r in pipeline_result["all_results"]
-        if r.status in (MatchStatus.MATCHED, MatchStatus.TOLERANCE_MATCHED)
-    ]
+def _render_resolved_section(res: dict):
+    matched = [r for r in res["all_results"]
+               if r.status in (MatchStatus.MATCHED, MatchStatus.TOLERANCE_MATCHED)]
+
     if not matched:
-        st.info("No resolved batches.")
+        st.markdown(
+            '<div class="empty">'
+            '<div class="empty-title">No resolved batches</div>'
+            '<div class="empty-desc">All batches exceeded the tolerance '
+            'threshold.</div></div>',
+            unsafe_allow_html=True)
         return
 
-    rows = []
+    rows = ""
     for r in matched:
-        status_label = (
-            "✅ Exact Match" if r.status == MatchStatus.MATCHED
-            else "🟡 Tolerance Match"
+        pill = ('<span class="st-pill st-pill-green">Matched</span>'
+                if r.status == MatchStatus.MATCHED
+                else '<span class="st-pill st-pill-amber">Tolerance</span>')
+        rows += (
+            f'<tr>'
+            f'<td class="ml">{r.settlement_batch_id}</td>'
+            f'<td>{pill}</td>'
+            f'<td class="m">₹{r.ledger_total:,.2f}</td>'
+            f'<td class="m">₹{r.total_fees:,.2f}</td>'
+            f'<td class="m">₹{r.expected_net:,.2f}</td>'
+            f'<td class="m">₹{r.payout_total:,.2f}</td>'
+            f'<td class="m">₹{r.delta:,.2f}</td>'
+            f'</tr>'
         )
-        rows.append({
-            "Batch ID": r.settlement_batch_id,
-            "Status": status_label,
-            "Ledger Total (₹)": f"{r.ledger_total:,.2f}",
-            "Fees (₹)": f"{r.total_fees:,.2f}",
-            "Expected Net (₹)": f"{r.expected_net:,.2f}",
-            "Payout (₹)": f"{r.payout_total:,.2f}",
-            "Delta (₹)": f"{r.delta:,.2f}",
-        })
 
-    st.dataframe(
-        pd.DataFrame(rows),
-        use_container_width=True,
-        hide_index=True,
-    )
+    st.markdown(f'''
+    <div style="background:#FFF;border:1px solid #E3E0D8;border-radius:4px;overflow:hidden;">
+        <table class="ltbl">
+            <thead><tr>
+                <th>Batch</th><th>Status</th>
+                <th class="r">Ledger</th><th class="r">Fees</th>
+                <th class="r">Expected</th><th class="r">Payout</th>
+                <th class="r">Delta</th>
+            </tr></thead>
+            <tbody>{rows}</tbody>
+        </table>
+    </div>
+    ''', unsafe_allow_html=True)
 
 
-def _render_unresolved_tab(pipeline_result: dict):
-    explanations = pipeline_result["explanations"]
+def _render_unresolved_section(res: dict):
+    explanations = res["explanations"]
+    audit_log = res["audit_log"]
+
     if not explanations:
-        st.success("🎉 No unresolved mismatches — all batches reconciled!")
+        st.markdown(
+            '<div class="empty">'
+            '<div class="empty-title">All batches reconciled</div>'
+            '<div class="empty-desc">No mismatches found.</div></div>',
+            unsafe_allow_html=True)
         return
 
-    for item in explanations:
-        delta_str = f"₹{abs(item['delta']):,.2f}"
-        direction = "under" if item["delta"] > 0 else "over"
+    search = st.text_input(
+        "Filter by Batch ID",
+        placeholder="e.g. BATCH_004",
+        key="batch_filter",
+    )
+    items = explanations
+    if search:
+        items = [e for e in explanations
+                 if search.upper() in e["settlement_batch_id"].upper()]
+    if not items:
+        st.caption("No batches match your filter.")
+        return
+
+    audit_by_id = {a["settlement_batch_id"]: a for a in audit_log}
+
+    for item in items:
+        d = item["delta"]
+        d_abs = f"₹{abs(d):,.2f}"
+        direction = "UNDER" if d > 0 else "OVER"
         conf = item["confidence"]
-        conf_pct = f"{conf:.0%}"
-        color = _confidence_color(conf)
+        c_pct_num = f"{conf:.0%}"
+        c_color = _conf_color(conf)
 
-        with st.expander(
-            f"🔴  **{item['settlement_batch_id']}**  —  "
-            f"Δ {delta_str} {direction}  |  "
-            f"Confidence {conf_pct}",
-            expanded=True,
-        ):
-            mc1, mc2, mc3, mc4 = st.columns(4)
-            mc1.metric("Expected Net", f"₹{item['expected_net']:,.2f}")
-            mc2.metric("Actual Payout", f"₹{item['payout_total']:,.2f}")
-            mc3.metric("Delta", f"₹{item['delta']:,.2f}")
-            mc4.metric("Confidence", conf_pct)
-
-            # Confidence bar
-            st.markdown(
-                f'<div class="conf-bar-bg">'
-                f'<div class="conf-bar-fill" style="width:{conf*100:.0f}%;'
-                f'background:{color};"></div></div>',
-                unsafe_allow_html=True,
+        # Build fee breakdown HTML if present
+        fee_html = ""
+        if item.get("fee_breakdown"):
+            fee_rows = "".join(
+                f'<tr><td>{cat}</td><td class="m">₹{amt:,.2f}</td></tr>'
+                for cat, amt in item["fee_breakdown"].items()
+            )
+            fee_html = (
+                f'<div class="mx-fees">'
+                f'<div class="mx-fees-lbl">Fee Breakdown</div>'
+                f'<table class="ltbl" style="max-width:300px;">'
+                f'<thead><tr><th>Category</th><th class="r">Amount</th></tr></thead>'
+                f'<tbody>{fee_rows}</tbody>'
+                f'</table></div>'
             )
 
-            st.markdown("")
-            st.markdown(f"**AI Explanation**")
-            st.markdown(
-                f"<div style='background:rgba(99,102,241,0.08);padding:16px 20px;"
-                f"border-radius:10px;border-left:3px solid {color};'>"
-                f"{item['explanation']}</div>",
-                unsafe_allow_html=True,
-            )
+        # Render entire card in one st.markdown call (no blank lines — Streamlit treats them as paragraph breaks)
+        card_html = (
+            f'<div class="mx">'
+            f'<div class="mx-head">'
+            f'<span class="mx-bid">{item["settlement_batch_id"]}</span>'
+            f'<div class="mx-tags">'
+            f'<span class="tag tag-delta">Δ {d_abs} {direction}</span>'
+            f'<span class="tag tag-review">NEEDS REVIEW</span>'
+            f'<span class="tag tag-conf">{c_pct_num} CONF.</span>'
+            f'</div></div>'
+            f'<div class="mx-metrics">'
+            f'<div><div class="mx-m-lbl">Expected</div>'
+            f'<div class="mx-m-val">₹{item["expected_net"]:,.2f}</div></div>'
+            f'<div><div class="mx-m-lbl">Payout</div>'
+            f'<div class="mx-m-val">₹{item["payout_total"]:,.2f}</div></div>'
+            f'<div><div class="mx-m-lbl">Delta</div>'
+            f'<div class="mx-m-val">₹{d:,.2f}</div></div>'
+            f'<div><div class="mx-m-lbl">Confidence</div>'
+            f'<div class="conf-inline">'
+            f'<span class="conf-pct">{c_pct_num}</span>'
+            f'<div class="conf-track">'
+            f'<div class="conf-fill" style="width:{conf*100:.0f}%;background:{c_color};"></div>'
+            f'</div></div></div>'
+            f'</div>'
+            f'<div class="mx-expl">{item["explanation"]}</div>'
+            f'{fee_html}'
+            f'</div>'
+        )
+        st.markdown(card_html, unsafe_allow_html=True)
 
-            if item.get("fee_breakdown"):
-                st.markdown("")
-                st.markdown("**Fee Breakdown**")
-                fee_df = pd.DataFrame(
-                    [{"Category": k, "Amount (₹)": f"{v:,.2f}"}
-                     for k, v in item["fee_breakdown"].items()]
-                )
-                st.dataframe(fee_df, use_container_width=True, hide_index=True)
 
 
-def _render_audit_tab(pipeline_result: dict):
-    audit = pipeline_result["audit_log"]
+        # Audit evidence expander
+        ae = audit_by_id.get(item["settlement_batch_id"])
+        if ae:
+            with st.expander(
+                f"AUDIT EVIDENCE — {item['settlement_batch_id']}"
+            ):
+                if ae["pii_fields_anonymized"]:
+                    pills = "  ".join(
+                        f'<span class="st-pill" style="background:#F0EFEC;color:#6B6558 !important;">{f}</span>'
+                        for f in ae["pii_fields_anonymized"]
+                    )
+                    st.markdown(
+                        f"**Anonymized PII Fields** &nbsp; {pills}",
+                        unsafe_allow_html=True)
+                else:
+                    st.caption("No PII fields detected.")
+
+                st.markdown("---")
+                st.markdown(f"**Timestamp:** `{ae['timestamp']}`")
+                st.markdown(f"**Confidence:** `{ae['confidence']}`")
+                st.markdown("---")
+                st.markdown(
+                    f"**LLM Prompts** ({len(ae['llm_payloads'])} total)")
+                for i, payload in enumerate(ae["llm_payloads"]):
+                    lbl = "Explanation Prompt" if i == 0 else "Confidence Prompt"
+                    st.markdown(f"*{lbl}:*")
+                    st.code(payload, language="text")
+
+                clean = True
+                for payload in ae["llm_payloads"]:
+                    try:
+                        pii_guard(payload)
+                    except Exception:
+                        clean = False
+                        break
+                if clean:
+                    st.success("PII guard verified — no sensitive data in any payload")
+                else:
+                    st.error("PII leak detected")
+
+
+def _render_audit_section(res: dict):
+    audit = res["audit_log"]
+
     if not audit:
-        st.info("No audit entries — no mismatches were processed by the AI agent.")
+        st.markdown(
+            '<div class="empty">'
+            '<div class="empty-title">No audit entries</div>'
+            '<div class="empty-desc">No mismatches were processed.</div></div>',
+            unsafe_allow_html=True)
         return
 
     for entry in audit:
-        conf = entry["confidence"]
         with st.expander(
-            f"📋  **{entry['settlement_batch_id']}**  —  "
-            f"{entry['timestamp']}"
+            f"**{entry['settlement_batch_id']}** — {entry['timestamp']}"
         ):
-            st.markdown("**Anonymized PII Fields**")
             if entry["pii_fields_anonymized"]:
-                badges = "  ".join(
-                    f"`{f}`" for f in entry["pii_fields_anonymized"]
+                pills = "  ".join(
+                    f'<span class="st-pill" style="background:#F0EFEC;color:#6B6558 !important;">{f}</span>'
+                    for f in entry["pii_fields_anonymized"]
                 )
-                st.markdown(badges)
+                st.markdown(
+                    f"**Anonymized PII Fields** &nbsp; {pills}",
+                    unsafe_allow_html=True)
             else:
-                st.caption("No PII fields detected in this record.")
+                st.caption("No PII fields detected.")
 
             st.markdown("---")
-            st.markdown(f"**Confidence Score:** `{conf}`")
-            st.markdown(f"**Generated Explanation:**")
+            st.markdown(f"**Confidence:** `{entry['confidence']}`")
+            st.markdown("**Explanation:**")
             st.markdown(f"> {entry['explanation']}")
-
             st.markdown("---")
             st.markdown(
-                f"**LLM Prompts Sent** ({len(entry['llm_payloads'])} total)"
-            )
+                f"**LLM Prompts** ({len(entry['llm_payloads'])} total)")
             for i, payload in enumerate(entry["llm_payloads"]):
                 label = "Explanation Prompt" if i == 0 else "Confidence Prompt"
                 st.markdown(f"*{label}:*")
                 st.code(payload, language="text")
 
-            # PII leak check confirmation
-            all_clean = True
+            clean = True
             for payload in entry["llm_payloads"]:
                 try:
                     pii_guard(payload)
                 except Exception:
-                    all_clean = False
+                    clean = False
                     break
-
-            if all_clean:
-                st.success("✅ PII guard verified — no sensitive data in any payload")
+            if clean:
+                st.success("PII guard verified — no sensitive data in any payload")
             else:
-                st.error("⚠️ PII leak detected!")
+                st.error("PII leak detected")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# SIDEBAR
+# SIDEBAR — matches reference mockup with labeled file sections
 # ═══════════════════════════════════════════════════════════════════════════
 
 def _render_sidebar() -> dict | None:
-    """Render sidebar controls; return config dict or None."""
     with st.sidebar:
-        st.markdown("## ⚙️  Configuration")
-        st.markdown("---")
-
-        st.markdown("### 📂  Data Files")
+        st.markdown("## Configuration")
 
         use_sample = st.checkbox("Use sample data", value=True)
 
@@ -573,25 +980,27 @@ def _render_sidebar() -> dict | None:
             ledger_source = data_dir / "sample_ledger.csv"
             settlement_source = data_dir / "sample_settlements.csv"
             fee_source = data_dir / "fee_schedule.csv"
-            st.caption(f"📄 Ledger: `sample_ledger.csv`")
-            st.caption(f"📄 Settlements: `sample_settlements.csv`")
-            st.caption(f"📄 Fee schedule: `fee_schedule.csv`")
+
+            st.markdown('<div class="sb-lbl">Ledger File</div>', unsafe_allow_html=True)
+            st.markdown('<div class="sb-file">sample_ledger.csv</div>', unsafe_allow_html=True)
+            st.markdown('<div class="sb-lbl">Settlements File</div>', unsafe_allow_html=True)
+            st.markdown('<div class="sb-file">sample_settlements.csv</div>', unsafe_allow_html=True)
+            st.markdown('<div class="sb-lbl">Fee Schedule</div>', unsafe_allow_html=True)
+            st.markdown('<div class="sb-file">fee_schedule.csv</div>', unsafe_allow_html=True)
         else:
+            st.markdown('<div class="sb-lbl">Ledger File</div>', unsafe_allow_html=True)
             ledger_file = st.file_uploader(
-                "Upload Ledger CSV",
-                type=["csv"],
-                key="ledger",
-            )
+                "Upload Ledger CSV", type=["csv"], key="ledger",
+                label_visibility="collapsed")
+            st.markdown('<div class="sb-lbl">Settlements File</div>', unsafe_allow_html=True)
             settlement_file = st.file_uploader(
-                "Upload Settlement CSV",
-                type=["csv"],
-                key="settlement",
-            )
+                "Upload Settlement CSV", type=["csv"], key="settlement",
+                label_visibility="collapsed")
+            st.markdown('<div class="sb-lbl">Fee Schedule</div>', unsafe_allow_html=True)
             fee_file = st.file_uploader(
                 "Upload Fee Schedule CSV (optional)",
-                type=["csv"],
-                key="fee_schedule",
-            )
+                type=["csv"], key="fee_schedule",
+                label_visibility="collapsed")
             if ledger_file:
                 ledger_source = ledger_file
             if settlement_file:
@@ -602,18 +1011,15 @@ def _render_sidebar() -> dict | None:
                 fee_source = _PROJECT_ROOT / "data" / "fee_schedule.csv"
 
         st.markdown("---")
-        st.markdown("### 🎚️  Settings")
+
         tolerance = st.slider(
-            "Matching Tolerance (₹)",
-            min_value=0.0,
-            max_value=50.0,
-            value=1.0,
-            step=0.5,
+            "Match Tolerance  ₹",
+            min_value=0.0, max_value=50.0, value=1.0, step=0.5,
             help="Maximum absolute delta to still consider a match.",
         )
 
-        st.markdown("---")
-        run = st.button("🚀  Run Reconciliation", use_container_width=True)
+        st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
+        run = st.button("Run Reconciliation", use_container_width=True)
 
         if run and ledger_source and settlement_source and fee_source:
             return {
@@ -644,20 +1050,17 @@ def main():
 
     config = _render_sidebar()
 
-    # Persistent result in session state
     if "pipeline_result" not in st.session_state:
         st.session_state["pipeline_result"] = None
 
     if config is not None:
-        with st.spinner("Running reconciliation pipeline…"):
+        with st.spinner("Running reconciliation…"):
             try:
                 ledger_df = load_ledger(config["ledger_source"])
                 settlement_df = load_settlements(config["settlement_source"])
                 fee_schedule_df = load_fee_schedule(config["fee_source"])
                 result = run_pipeline(
-                    ledger_df,
-                    settlement_df,
-                    fee_schedule_df,
+                    ledger_df, settlement_df, fee_schedule_df,
                     tolerance=config["tolerance"],
                 )
                 st.session_state["pipeline_result"] = result
@@ -668,39 +1071,38 @@ def main():
     result = st.session_state["pipeline_result"]
 
     if result is None:
-        # Landing state
         st.markdown(
-            "<div style='text-align:center;padding:80px 20px;'>"
-            "<p style='font-size:3.5rem;margin-bottom:0;'>📊</p>"
-            "<p style='color:#94a3b8;font-size:1.15rem;max-width:480px;"
-            "margin:12px auto 0;'>"
-            "Upload your settlement and ledger files, or check "
-            "<b>\"Use sample data\"</b> in the sidebar, then click "
-            "<b>Run Reconciliation</b> to start."
-            "</p></div>",
+            '<div class="empty">'
+            '<div class="empty-title">Ready to reconcile</div>'
+            '<div class="empty-desc">'
+            'Select <strong>Use sample data</strong> in the sidebar or upload '
+            'your own files, then click <strong>Run Reconciliation</strong>.'
+            '</div></div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<div class="hiw">'
+            '<div class="hiw-s"><div class="hiw-n">01</div><div class="hiw-l">Upload</div></div>'
+            '<div class="hiw-s"><div class="hiw-n">02</div><div class="hiw-l">Match</div></div>'
+            '<div class="hiw-s"><div class="hiw-n">03</div><div class="hiw-l">Explain</div></div>'
+            '<div class="hiw-s"><div class="hiw-n">04</div><div class="hiw-l">Audit</div></div>'
+            '</div>',
             unsafe_allow_html=True,
         )
         return
 
-    # ── Results ──────────────────────────────────────────────────────
-    _render_metrics(result)
-    st.markdown("")
+    _render_stat_cards(result)
 
-    tab1, tab2, tab3 = st.tabs([
-        "✅  Resolved",
-        "🔴  Unresolved & Explanations",
-        "📋  Audit Log",
-    ])
+    tab1, tab2, tab3 = st.tabs(["RESOLVED", "UNRESOLVED", "AUDIT LOG"])
 
     with tab1:
-        _render_resolved_tab(result)
-
+        _render_resolved_section(result)
     with tab2:
-        _render_unresolved_tab(result)
-
+        _render_unresolved_section(result)
     with tab3:
-        _render_audit_tab(result)
+        _render_audit_section(result)
 
 
 if __name__ == "__main__":
     main()
+

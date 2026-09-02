@@ -49,6 +49,15 @@ def load_csv(
         • header-only files (no data rows)
         • missing required columns
     """
+    # --- file-type guard ------------------------------------------------
+    if isinstance(source, (str, pathlib.Path)):
+        ext = pathlib.Path(source).suffix.lower()
+        if ext and ext != ".csv":
+            raise ValueError(
+                f"{label} has an unsupported file type ({ext}). "
+                f"Please upload a CSV file."
+            )
+
     try:
         df = pd.read_csv(source)
     except pd.errors.EmptyDataError:
@@ -91,7 +100,9 @@ def load_ledger(source: Union[str, pathlib.Path, IO]) -> pd.DataFrame:
         bad_rows = df.index[nan_mask].tolist()
         raise ValueError(
             f"Ledger file has {nan_mask.sum()} non-numeric amount value(s) "
-            f"in row(s) {bad_rows}. Every amount must be a valid number."
+            f"in row(s) {bad_rows}. Every amount must be a valid number. "
+            f"If your amounts contain currency symbols (₹, $) or commas, "
+            f"please remove them before uploading."
         )
     return df
 
@@ -109,6 +120,8 @@ def load_settlements(source: Union[str, pathlib.Path, IO]) -> pd.DataFrame:
         bad_rows = df.index[nan_mask].tolist()
         raise ValueError(
             f"Settlement file has {nan_mask.sum()} non-numeric payout_total "
-            f"value(s) in row(s) {bad_rows}. Every payout must be a valid number."
+            f"value(s) in row(s) {bad_rows}. Every payout must be a valid number. "
+            f"If your values contain currency symbols (₹, $) or commas, "
+            f"please remove them before uploading."
         )
     return df

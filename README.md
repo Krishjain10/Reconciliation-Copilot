@@ -173,6 +173,7 @@ All numbers below are from `python eval/golden_set.py` run against the 8-batch g
 5. **PII guard scope** — covers account numbers (9–18 digits) and IFSC codes; other PII types (email, PAN) can be added
 6. **Orphan settlements** — settlement entries with no matching ledger batch are silently skipped
 7. **Single file pair** — each run processes one ledger + one settlement CSV
+8. **De-tokenization API** — `detokenize()` and `deanonymize_record()` in `agent/anonymize.py` are reserved for a future authorized-user audit review flow (displaying original values to compliance officers); not yet wired into the dashboard
 
 ---
 
