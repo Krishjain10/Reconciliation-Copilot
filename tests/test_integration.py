@@ -49,7 +49,8 @@ from matching.engine import (
     resolved,
     unresolved,
 )
-from ui.app import run_pipeline, _create_fallback_llm
+from ui.app import run_pipeline
+from ui.mock_llm import create_fallback_llm
 
 
 # ---------------------------------------------------------------------------
@@ -281,7 +282,7 @@ class TestPIIGuardAllPaths:
             "beneficiary_name": "Test Person",
         }
         safe = anon.anonymize_record(record)
-        mock = _create_fallback_llm()
+        mock = create_fallback_llm()
         result = explain_mismatch(safe, llm_callable=mock)
 
         # Both payloads must be clean
