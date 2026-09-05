@@ -4,6 +4,13 @@ AI-powered settlement reconciliation that detects, explains, and helps resolve m
 
 ---
 
+## Documentation Links
+
+- [Problem Statement (RazorPay)](RazorPay_Problem_Statement.md)
+- [Solution Architecture](RazorPay_Solution_Document.md)
+
+---
+
 ## The Problem
 
 Payment processors settle thousands of transactions daily. Each settlement batch groups multiple orders, deducts fees, and issues a net payout. When the payout doesn't match the merchant's records, operations teams manually investigate — sifting through spreadsheets, cross-referencing fee schedules, and chasing down ₹50 discrepancies across ₹50 lakh batches.
@@ -12,6 +19,8 @@ Payment processors settle thousands of transactions daily. Each settlement batch
 1. **Deterministic matching** — rule-based math that's auditable and exact
 2. **AI-powered explanations** — a LangGraph agent that explains *why* each mismatch happened
 3. **Zero PII exposure** — sensitive data (account numbers, names, IFSC codes) is HMAC-tokenized before reaching the LLM
+
+![Dashboard Results](docs/screenshots/dashboard-results.png)
 
 ---
 
@@ -43,59 +52,19 @@ Payment processors settle thousands of transactions daily. Each settlement batch
 
 ---
 
-## Project Structure
-
-```
-├── ingestion/
-│   └── loader.py              # CSV loading, validation, NaN/empty-file guards
-├── matching/
-│   └── engine.py              # Batch grouping, fee calculation, delta classification
-├── agent/
-│   ├── anonymize.py           # HMAC-SHA-256 field tokenizer
-│   ├── pii_guard.py           # Regex pre-send safety net
-│   └── explain.py             # 3-node LangGraph agent
-├── ui/
-│   └── app.py                 # Streamlit dashboard + run_pipeline()
-├── eval/
-│   ├── golden_set.py          # 8-batch golden evaluation suite
-│   └── edge_cases/            # 3 malformed CSVs for quarantine testing
-├── tests/
-│   ├── test_matching_engine.py    # 16 unit tests
-│   ├── test_agent_explain.py      # 15 unit tests
-│   └── test_integration.py        # 30 integration tests
-└── data/
-    ├── fee_schedule.csv
-    ├── sample_ledger.csv
-    └── sample_settlements.csv
-```
-
----
-
-## Setup
+## Setup & Execution
 
 ### Prerequisites
 
 - Python 3.10+
-- pip
 
-### Install Dependencies
+### 1. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Clone & Navigate
-
-```bash
-git clone <repo-url>
-cd Rzorpay_Hackathon
-```
-
----
-
-## Running the Demo
-
-### 1. Launch the Dashboard
+### 2. Launch the Dashboard
 
 ```bash
 streamlit run ui/app.py
@@ -107,9 +76,14 @@ The dashboard shows:
 - **Metric cards** — Total Batches, Matched, Tolerance-Matched, Mismatched
 - **Resolved tab** — all reconciled batches with fee breakdowns
 - **Unresolved tab** — AI-generated explanations with confidence scores
-- **Audit Log tab** — every LLM prompt logged, PII guard verification
+- **Orphans tab** — unmatched bank settlements missing from the ledger
+- **Audit Log tab** — every LLM prompt logged, PII guard verification, and a de-tokenization toggle
 
-### 2. Run Tests
+![Unresolved Explanation](docs/screenshots/unresolved-explanation.png)
+
+![Audit Log & Detokenization](docs/screenshots/audit-log-detokenize.png)
+
+### 3. Run Tests
 
 ```bash
 # Full test suite (61 tests)
@@ -119,21 +93,11 @@ python -m pytest tests/ -v
 python eval/golden_set.py
 ```
 
-### 3. Custom Data
-
-Upload your own CSVs via the sidebar. Required columns:
-
-**Ledger CSV:** `order_id`, `settlement_batch_id`, `amount`, `fee_category`
-
-**Settlement CSV:** `settlement_batch_id`, `payout_total`
-
-**Fee Schedule CSV:** `fee_category`, `fee_type`, `fee_value`
-
 ---
 
 ## Evaluation Accuracy
 
-All numbers below are from `python eval/golden_set.py` run against the 8-batch golden dataset and verified stable across two consecutive runs.
+All numbers below are verified against our `eval/golden_set.py` suite.
 
 ### Golden Evaluation — 17/17 (100%)
 
@@ -153,14 +117,6 @@ All numbers below are from `python eval/golden_set.py` run against the 8-batch g
 | `test_matching_engine.py` — fee calculation, batch matching | 16 |
 | `test_integration.py` — end-to-end pipeline, edge cases, PII paths | 30 |
 | **Total** | **61** |
-
-### Edge-Case Quarantine — 3/3
-
-| Malformed File | Error Produced |
-|----------------|----------------|
-| Missing required columns | `"Ledger file is missing required columns: {'settlement_batch_id'}"` |
-| Non-numeric amounts | `"Ledger file has 2 non-numeric amount value(s) in row(s) [0, 1]"` |
-| Empty file | `"Ledger file is empty — no data or column headers were found"` |
 
 ---
 
@@ -188,5 +144,4 @@ These limitations from the original version have been resolved:
 
 ## License
 
-Built for the Razorpay Hackathon.
-
+MIT License. Built for the Razorpay Hackathon.

@@ -379,7 +379,7 @@ def render_detoken_section(res: dict) -> None:
         key="detoken_pass",
     )
 
-    # Simple passphrase check — in production this would be a proper auth flow
+    # DEMO-ONLY PLACEHOLDER: This is a demo passphrase, not production auth.
     if passphrase == "recon-audit-2024":
         st.success("✓ Authorized — showing de-tokenized values")
         token_map = anonymizer._lookup
